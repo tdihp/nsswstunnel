@@ -7,7 +7,11 @@ Installation
 ------------
 
 ```
-apt-get install libnss3-dev python3-dev
+apt-get install libnss3-dev python3-dev libnss3-tools
 pip install -r requirements.txt
 ```
+
+
+Development
+-----------
 

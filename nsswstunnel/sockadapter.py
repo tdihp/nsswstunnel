@@ -7,17 +7,18 @@ import socket
 import errno
 from functools import wraps
 import traceback
+import logging
 
-from twisted.logger import Logger
+# from twisted.logger import Logger
 
 from nss.error import NSPRError, get_nspr_error_string
 import nss.io as io
 import nss.ssl as ssl
 
-import prerr
+from . import prerr
 
-# logger = logging.getLogger('sockadapter')
-log = Logger()
+logger = logging.getLogger(__name__)
+# logger = Logger()
 
 
 OPT_NSPR2SOCKET = {
@@ -70,7 +71,8 @@ def nspr2oserror(f):
             if e.errno in ERRNO_NSPR2SOCKET:
                 err = ERRNO_NSPR2SOCKET[e.errno]
                 exc = OSError(err, os.strerror(err))
-                log.debug('got exc %s' % exc)
+                # XXX: use exc_info and callstack
+                logger.debug('got exc %s', exc)
                 raise exc
             else:
                 # we have no idea what this is, raise as-is
@@ -84,6 +86,9 @@ class SocketAdapter(object):
     """
     Adapts a SSLSocket into Regular socket
     """
+    type = socket.SOCK_STREAM
+    proto = socket.IPPROTO_TCP
+
     def __init__(self, skt):
         self.skt = skt
 
@@ -97,7 +102,7 @@ class SocketAdapter(object):
 
     def getsockopt(self, level, optname, buflen=None):
         if optname == socket.SO_ERROR:
-            log.debug('SO_ERROR is always zero!')
+            logger.debug('SO_ERROR is always zero!')
             # nss doesn't implement this
             return 0
 
@@ -144,3 +149,6 @@ class SocketAdapter(object):
     def shutdown(self, flags):
         return self.skt.shutdown(flags)
 
+    @nspr2oserror
+    def force_handshake(self):
+        return self.skt.force_handshake()
